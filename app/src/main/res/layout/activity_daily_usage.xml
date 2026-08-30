@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#121212">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:background="#2A2A2A" android:padding="12dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1.3"
+            android:text="Date" android:textColor="#AAAAAA" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:gravity="end" android:text="Mobile" android:textColor="#AAAAAA" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:gravity="end" android:text="WiFi" android:textColor="#AAAAAA" android:textStyle="bold" android:paddingStart="8dp" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:gravity="end" android:text="Total" android:textColor="#AAAAAA" android:textStyle="bold" android:paddingStart="8dp" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" />
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#444444" />
+
+    <TextView android:id="@+id/tvWeekTotal" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="12dp" android:background="#003355" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="14sp" />
+
+    <TextView android:id="@+id/tvMonthTotal" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="12dp" android:background="#001C33" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="14sp" />
+
+</LinearLayout>

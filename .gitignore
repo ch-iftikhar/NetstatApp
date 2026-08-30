@@ -1,0 +1,28 @@
+# Build outputs
+/app/build/
+/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Gradle
+.gradle/
+gradle.properties.local
+local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Keystores (never commit signing keys)
+*.jks
+*.keystore
+
+# Room schema exports (regenerated on build)
+schemas/
+
+# OS junk
+.DS_Store
+Thumbs.db
