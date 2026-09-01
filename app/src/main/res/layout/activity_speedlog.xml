@@ -4,14 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212">
+    android:background="#121212"
+    android:fitsSystemWindows="true">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#1E1E1E"
+        android:background="#1A2C3D"
         android:titleTextColor="#FFFFFF"
+        android:elevation="10dp"
+        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:title="Live Speed Log" />
 
     <TextView

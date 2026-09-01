@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+        toolbar.setTitleTextColor(android.graphics.Color.WHITE)
 
         drawerLayout = findViewById(R.id.drawerLayout)
         val toggle = ActionBarDrawerToggle(
@@ -53,6 +54,10 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.navSpeedLog).setOnClickListener {
             drawerLayout.closeDrawers()
             startActivity(Intent(this, SpeedLogActivity::class.java))
+        }
+        findViewById<TextView>(R.id.navDataTools).setOnClickListener {
+            drawerLayout.closeDrawers()
+            startActivity(Intent(this, DataToolsActivity::class.java))
         }
         findViewById<TextView>(R.id.navAbout).setOnClickListener {
             drawerLayout.closeDrawers()

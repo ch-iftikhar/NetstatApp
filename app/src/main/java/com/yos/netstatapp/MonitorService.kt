@@ -30,7 +30,7 @@ class MonitorService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val pollIntervalMs = 1000L
-    private val dbWriteIntervalMs = 5000L
+    private val dbWriteIntervalMs = 1000L
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())

@@ -17,6 +17,7 @@
         android:allowBackup="true"
         android:theme="@style/AppTheme">
         <activity android:name=".AboutActivity" android:exported="false" />
+        <activity android:name=".DataToolsActivity" android:exported="false" />
         <activity android:name=".SpeedLogActivity" android:exported="false" />
         <activity
             android:name=".MainActivity"
