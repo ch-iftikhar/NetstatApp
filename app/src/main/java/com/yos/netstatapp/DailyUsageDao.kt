@@ -16,4 +16,7 @@ interface DailyUsageDao {
 
     @Query("SELECT * FROM daily_usage WHERE date LIKE :monthPrefix || '%' ORDER BY date DESC")
     fun getMonthRows(monthPrefix: String): Flow<List<DailyUsage>>
+
+    @Query("SELECT * FROM daily_usage ORDER BY date DESC")
+    suspend fun getAll(): List<DailyUsage>
 }

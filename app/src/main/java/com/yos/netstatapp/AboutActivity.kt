@@ -25,6 +25,10 @@ class AboutActivity : AppCompatActivity() {
         if (uri != null) exportDatabase(uri)
     }
 
+    private val exportTxtLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri != null) exportTxt(uri)
+    }
+
     private val importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importDatabase(uri)
     }
@@ -40,6 +44,11 @@ class AboutActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnExport).setOnClickListener {
             val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             exportLauncher.launch("netstat_backup_$stamp.db")
+        }
+
+        findViewById<Button>(R.id.btnExportTxt).setOnClickListener {
+            val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            exportTxtLauncher.launch("netstat_usage_$stamp.txt")
         }
 
         findViewById<Button>(R.id.btnImport).setOnClickListener {
@@ -65,13 +74,67 @@ class AboutActivity : AppCompatActivity() {
         }
     }
 
+    private fun exportTxt(destUri: Uri) {
+        tvStatus.text = "Exporting TXT..."
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val dao = AppDatabase.getInstance(applicationContext).dailyUsageDao()
+                    val rows = dao.getAll()
+                    val displayFormat = SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault())
+                    val keyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+                    val sb = StringBuilder()
+                    sb.append("NetstatApp — Daily Usage Export\n")
+                    sb.append("Generated: ${SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())}\n")
+                    sb.append("=".repeat(60)).append("\n\n")
+                    sb.append(String.format("%-14s %-12s %-12s %-12s\n", "Date", "Mobile", "WiFi", "Total"))
+                    sb.append("-".repeat(60)).append("\n")
+
+                    var totalMobile = 0L
+                    var totalWifi = 0L
+
+                    for (row in rows) {
+                        val dateLabel = try {
+                            displayFormat.format(keyFormat.parse(row.date)!!)
+                        } catch (e: Exception) { row.date }
+                        sb.append(String.format(
+                            "%-14s %-12s %-12s %-12s\n",
+                            dateLabel,
+                            Formatters.formatBytes(row.mobileBytes),
+                            Formatters.formatBytes(row.wifiBytes),
+                            Formatters.formatBytes(row.mobileBytes + row.wifiBytes)
+                        ))
+                        totalMobile += row.mobileBytes
+                        totalWifi += row.wifiBytes
+                    }
+
+                    sb.append("-".repeat(60)).append("\n")
+                    sb.append(String.format(
+                        "%-14s %-12s %-12s %-12s\n",
+                        "TOTAL",
+                        Formatters.formatBytes(totalMobile),
+                        Formatters.formatBytes(totalWifi),
+                        Formatters.formatBytes(totalMobile + totalWifi)
+                    ))
+
+                    contentResolver.openOutputStream(destUri)?.use { out ->
+                        out.write(sb.toString().toByteArray())
+                    }
+                }
+                tvStatus.text = "TXT export complete."
+            } catch (e: Exception) {
+                tvStatus.text = "TXT export failed: ${e.message}"
+            }
+        }
+    }
+
     private fun importDatabase(srcUri: Uri) {
         tvStatus.text = "Stopping monitor service..."
         lifecycleScope.launch {
             try {
-                // stop the service first so nothing writes to the DB while we swap the file
                 stopService(Intent(this@AboutActivity, MonitorService::class.java))
-                delay(300) // brief grace period for any in-flight write to finish
+                delay(300)
 
                 withContext(Dispatchers.IO) {
                     AppDatabase.closeAndReset()
