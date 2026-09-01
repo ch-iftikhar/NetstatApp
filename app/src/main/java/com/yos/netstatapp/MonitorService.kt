@@ -2,11 +2,6 @@ package com.yos.netstatapp
 
 import android.app.*
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Rect
-import android.graphics.Typeface
 import android.net.TrafficStats
 import android.os.Build
 import android.os.Handler
@@ -20,8 +15,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 class MonitorService : Service() {
 
@@ -29,35 +22,10 @@ class MonitorService : Service() {
         const val CHANNEL_ID = "netstat_monitor_channel"
         const val NOTIF_ID = 1001
 
-        fun formatRate(bytesPerSec: Long): String {
-            val units = arrayOf("B/s", "KB/s", "MB/s", "GB/s")
-            var value = bytesPerSec.toDouble()
-            var unitIndex = 0
-            while (abs(value) >= 1024.0 && unitIndex < units.size - 1) {
-                value /= 1024.0; unitIndex++
-            }
-            return if (unitIndex == 0) "${value.toLong()} ${units[unitIndex]}"
-            else String.format("%.1f %s", value, units[unitIndex])
-        }
-
-        fun formatBytes(bytes: Long): String {
-            val units = arrayOf("B", "KB", "MB", "GB", "TB")
-            var value = bytes.toDouble()
-            var unitIndex = 0
-            while (abs(value) >= 1024.0 && unitIndex < units.size - 1) {
-                value /= 1024.0; unitIndex++
-            }
-            return if (unitIndex == 0) "${value.toLong()} ${units[unitIndex]}"
-            else String.format("%.1f %s", value, units[unitIndex])
-        }
-
-        fun formatSig3(value: Double): String {
-            return when {
-                value >= 100 -> value.roundToInt().toString()
-                value >= 10 -> String.format("%.1f", value)
-                else -> String.format("%.2f", value)
-            }
-        }
+        // kept as thin pass-throughs so other files (adapters etc.) that already call
+        // MonitorService.formatRate / formatBytes don't need updating
+        fun formatRate(bytesPerSec: Long) = Formatters.formatRate(bytesPerSec)
+        fun formatBytes(bytes: Long) = Formatters.formatBytes(bytes)
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -97,7 +65,7 @@ class MonitorService : Service() {
         logDao = db.networkLogDao()
         dailyDao = db.dailyUsageDao()
         createChannel()
-        startForeground(NOTIF_ID, buildNotification("↓ 0 B/s   ↑ 0 B/s", "Session: 0 B", createDominantIcon(0, 0)))
+        startForeground(NOTIF_ID, buildNotification(0, 0, NotificationIconRenderer.createDominantIcon(this, 0, 0)))
 
         serviceScope.launch {
             val cutoff = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
@@ -108,71 +76,6 @@ class MonitorService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         handler.post(pollRunnable)
         return START_STICKY
-    }
-
-    // ALPHA_8 mask bitmap — the format Android notification small icons actually expect,
-    // matches how real FOSS traffic monitors (NetMonitor, Data Monitor) render their icons.
-    private fun createDominantIcon(downRate: Long, upRate: Long): IconCompat {
-        val value = if (downRate >= upRate) downRate else upRate
-
-        val units = arrayOf("B", "K", "M", "G")
-        var v = value.toDouble()
-        var unitIndex = 0
-        while (abs(v) >= 1024.0 && unitIndex < units.size - 1) {
-            v /= 1024.0; unitIndex++
-        }
-        val numberText = formatSig3(v)
-        val unitText = units[unitIndex]
-
-        val size = 96
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ALPHA_8)
-        val canvas = Canvas(bitmap)
-
-        val typeface = try {
-            Typeface.create("sans-serif-black", Typeface.BOLD)
-        } catch (e: Exception) {
-            Typeface.DEFAULT_BOLD
-        }
-
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.WHITE
-            textAlign = Paint.Align.CENTER
-            style = Paint.Style.FILL_AND_STROKE
-            strokeWidth = size * 0.02f
-            this.typeface = typeface
-        }
-
-        val bounds = Rect()
-        val margin = size * 0.03f
-
-        // unit: fixed proportion, bottom-anchored
-        val unitSize = size * 0.19f
-        paint.textSize = unitSize
-        paint.getTextBounds(unitText, 0, unitText.length, bounds)
-        val unitBaselineY = size - margin
-        val unitTopY = unitBaselineY - bounds.height() - (size * 0.02f)
-
-        // number: auto-fit into remaining space above the unit, hard-capped so it can never overflow
-        val numberTargetWidth = size * 0.94f
-        val numberMaxHeight = (unitTopY - margin).coerceAtLeast(10f)
-        var numberSize = 12f
-        while (numberSize < 400f) {
-            paint.textSize = numberSize
-            paint.getTextBounds(numberText, 0, numberText.length, bounds)
-            if (bounds.width() >= numberTargetWidth || bounds.height() >= numberMaxHeight) break
-            numberSize += 1f
-        }
-        // step back one increment to guarantee we're inside bounds, not right at the edge
-        numberSize -= 1f
-        paint.textSize = numberSize.coerceAtLeast(12f)
-        paint.getTextBounds(numberText, 0, numberText.length, bounds)
-        val numberBaselineY = margin + bounds.height()
-
-        canvas.drawText(numberText, size / 2f, numberBaselineY, paint)
-        paint.textSize = unitSize
-        canvas.drawText(unitText, size / 2f, unitBaselineY, paint)
-
-        return IconCompat.createWithBitmap(bitmap)
     }
 
     private fun pollNetworkStats() {
@@ -196,15 +99,11 @@ class MonitorService : Service() {
         lastMobileRx = nowMobileRx; lastMobileTx = nowMobileTx
         lastTime = now
 
-        val report = "RX: ${formatRate(rxRate)}\nTX: ${formatRate(txRate)}\nTotal RX: ${formatBytes(nowRx)}\nTotal TX: ${formatBytes(nowTx)}"
+        val report = "RX: ${Formatters.formatRate(rxRate)}\nTX: ${Formatters.formatRate(txRate)}\nTotal RX: ${Formatters.formatBytes(nowRx)}\nTotal TX: ${Formatters.formatBytes(nowTx)}"
         NetworkDataBus.postUpdate(report)
 
-        val topLine = "↓ ${formatRate(rxRate)}   ↑ ${formatRate(txRate)}"
-        val sessionRx = nowRx - sessionStartRx
-        val sessionTx = nowTx - sessionStartTx
-        val bottomLine = "Session ↓${formatBytes(sessionRx)}  ↑${formatBytes(sessionTx)}"
-        val icon = createDominantIcon(rxRate, txRate)
-        notificationManager.notify(NOTIF_ID, buildNotification(topLine, bottomLine, icon))
+        val icon = NotificationIconRenderer.createDominantIcon(this, rxRate, txRate)
+        notificationManager.notify(NOTIF_ID, buildNotification(rxRate, txRate, icon))
 
         if (now - lastDbWrite >= dbWriteIntervalMs) {
             val mobileDeltaSnapshot = mobileDelta
@@ -232,10 +131,17 @@ class MonitorService : Service() {
         }
     }
 
-    private fun buildNotification(title: String, text: String, icon: IconCompat): Notification {
+    // plain system font, tighter gap between the down/up columns
+    private fun buildNotification(rxRate: Long, txRate: Long, icon: IconCompat): Notification {
+        val title = "\u2193 ${Formatters.formatFixedColumn(rxRate)}   \u2191 ${Formatters.formatFixedColumn(txRate)}"
+
+        val sessionRx = TrafficStats.getTotalRxBytes() - sessionStartRx
+        val sessionTx = TrafficStats.getTotalTxBytes() - sessionStartTx
+        val bottomLine = "Session \u2193${Formatters.formatBytes(sessionRx)}  \u2191${Formatters.formatBytes(sessionTx)}"
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
-            .setContentText(text)
+            .setContentText(bottomLine)
             .setSmallIcon(icon)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
