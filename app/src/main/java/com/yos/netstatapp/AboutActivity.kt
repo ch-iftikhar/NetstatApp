@@ -10,8 +10,8 @@ import androidx.appcompat.widget.Toolbar
 class AboutActivity : AppCompatActivity() {
 
     // TODO: replace placeholders with your real GitHub URL, email, and feature description
-    private val githubUrl = "https://github.com/YOUR_USERNAME/netstatapp"
-    private val contactEmail = "your.email@example.com"
+    private val githubUrl = "https://github.com/ch-iftikhar/NetstatApp"
+    private val contactEmail = "iftikhar44922691@gmail.com"
     private val description = """
         A lightweight, fully open-source network monitor — built entirely from source,
         no closed dependencies, no bloat.
