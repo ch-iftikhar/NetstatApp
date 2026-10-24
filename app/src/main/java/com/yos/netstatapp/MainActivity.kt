@@ -59,6 +59,10 @@ class MainActivity : AppCompatActivity() {
             drawerLayout.closeDrawers()
             startActivity(Intent(this, DataToolsActivity::class.java))
         }
+        findViewById<TextView>(R.id.navAppUsage).setOnClickListener {
+            drawerLayout.closeDrawers()
+            startActivity(Intent(this, AppUsageActivity::class.java))
+        }
         findViewById<TextView>(R.id.navAbout).setOnClickListener {
             drawerLayout.closeDrawers()
             startActivity(Intent(this, AboutActivity::class.java))
